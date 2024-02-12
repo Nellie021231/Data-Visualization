@@ -1,0 +1,298 @@
+---
+title: "all data visualization"
+---
+
+```{r}
+library(haven)
+data <- read_spss("/Users/nelliechen/Desktop/IDA meeting/ELS variable undated 2.13.21.sav")
+library(readr)
+
+els <- data[, c("STU_ID", "SCH_ID", "F1S18A", "F1S18B", "F1S18C", "F1S18D",
+                "F1S18E", "Male", "SES_Grp", "Asian", "Black", "Hispanic", "Other")]
+
+els_labs <- c("stu_id", "sch_id", "excellentTests", "understandTexts", "understandClass",
+              "excellentAssign", "masterSkills",  "Male", "SES_Grp", "Asian", "Black", "Hispanic", "Other")
+colnames(els) <- els_labs
+summary(els)
+```
+
+```{r histograms}
+library(ggplot2)
+
+# excellent test
+ggplot(els, aes(x = excellentTests)) + 
+  geom_histogram(binwidth = 1, fill = "darkseagreen3", color = "darkseagreen3") +
+  geom_text(stat = 'count', aes(label = ..count.., y = ..count..), vjust = -0.5) +
+  labs(title = "Histogram of Excellent Test Scores", 
+       x = "Excellent Test Scores", 
+       y = "Frequency")
+# understand texts
+ggplot(els, aes(x = understandTexts)) + 
+  geom_histogram(binwidth = 1, fill = "darkseagreen3", color = "darkseagreen3") +
+  geom_text(stat = 'count', aes(label = ..count.., y = ..count..), vjust = -0.5) +
+  labs(title = "Histogram of Understanding Texts Scores", 
+       x = "Understanding Texts Scores", 
+       y = "Frequency")
+
+# understand class
+ggplot(els, aes(x = understandClass)) + 
+  geom_histogram(binwidth = 1, fill = "darkseagreen3", color = "darkseagreen3") +
+  geom_text(stat = 'count', aes(label = ..count.., y = ..count..), vjust = -0.5) +
+  labs(title = "Histogram of Understanding Class Material Scores", 
+       x = "Understanding Class Material Scores", 
+       y = "Frequency")
+
+# excellent assignment
+ggplot(els, aes(x = excellentAssign)) + 
+  geom_histogram(binwidth = 1, fill = "darkseagreen3", color = "darkseagreen3") +
+  geom_text(stat = 'count', aes(label = ..count.., y = ..count..), vjust = -0.5) +
+  labs(title = "Histogram of Excellent Assignment Scores", 
+       x = "Excellent Assignment Scores", 
+       y = "Frequency")
+
+# master skills
+ggplot(els, aes(x = masterSkills)) + 
+  geom_histogram(binwidth = 1, fill = "darkseagreen3", color = "darkseagreen3") +
+  geom_text(stat = 'count', aes(label = ..count.., y = ..count..), vjust = -0.5) +
+  labs(title = "Histogram of Mastering Skills Scores", 
+       x = "Mastering Skills Scores", 
+       y = "Frequency")
+
+# combine 5 graphs into 1
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# Assuming els is your original dataframe
+# First, create els_long correctly
+els_long <- els %>%
+  pivot_longer(
+    cols = c("excellentTests", "understandTexts", "understandClass", "excellentAssign", "masterSkills"),
+    names_to = "ScoreType",
+    values_to = "Scores"
+  )
+
+# Then, calculate frequencies for ordering without prematurely referencing els_long
+score_order <- els_long %>%
+  group_by(ScoreType) %>%
+  summarize(Frequency = n()) %>%
+  arrange(desc(Frequency)) %>%
+  pull(ScoreType)
+
+# Apply this order to ScoreType in els_long
+els_long$ScoreType <- factor(els_long$ScoreType, levels = score_order)
+
+# Now plot with ScoreType ordered by frequency
+ggplot(els_long, aes(x = Scores, fill = ScoreType)) + 
+  geom_histogram(position = "fill", alpha = 0.5, binwidth = 1) + # Changed to position = "fill" for clarity
+  scale_fill_brewer(palette = "Set1") + # Use a distinct color palette
+  labs(title = "Combined Histogram of Scores",
+       x = "Score Values",
+       y = "Proportion") + # Changed to Proportion for position = "fill"
+  theme_minimal() +
+  guides(fill = guide_legend(title = "Score Type"))
+```
+
+```{r bar graphs}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+# bar graph for each item
+# excellent test 
+library(ggplot2)
+library(dplyr)
+
+# Calculate mean and median
+mean_value <- mean(els$excellentTests, na.rm = TRUE)
+median_value <- median(els$excellentTests, na.rm = TRUE)
+
+# Create the bar graph
+ggplot(els, aes(x = as.factor(excellentTests))) + 
+  geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+  labs(title = "Bar Graph of Excellent Test Scores", 
+       x = "Excellent Test Scores", 
+       y = "Count") +
+  geom_text(aes(label = ..count..), stat = 'count', position = position_stack(vjust = 0.5), color = "white") + # Add count labels
+  annotate("text", x = Inf, y = Inf, label = paste("Mean:", round(mean_value, 2)), hjust = 1.1, vjust = 2, size = 4, color = "black") + # Add mean label
+  annotate("text", x = Inf, y = Inf, label = paste("Median:", median_value), hjust = 1.1, vjust = 1, size = 4, color = "black") # Add median label
+
+
+# understand text
+library(ggplot2)
+library(dplyr)
+
+# Calculate mean and median for understandTexts
+mean_understandTexts <- mean(els$understandTexts, na.rm = TRUE)
+median_understandTexts <- median(els$understandTexts, na.rm = TRUE)
+
+# Create the bar graph for understandTexts
+ggplot(els, aes(x = as.factor(understandTexts))) + 
+  geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+  labs(title = "Bar Graph of Understanding Texts Scores", 
+       x = "Understanding Texts Scores", 
+       y = "Count") +
+  geom_text(aes(label = ..count..), stat = 'count', position = position_stack(vjust = 0.5), color = "white") +
+  annotate("text", x = Inf, y = Inf, label = paste("Mean:", round(mean_understandTexts, 2)), hjust = 1.1, vjust = 2, size = 4, color = "black") +
+  annotate("text", x = Inf, y = Inf, label = paste("Median:", median_understandTexts), hjust = 1.1, vjust = 1, size = 4, color = "black")
+
+# understand class
+# Calculate mean and median for understandClass
+mean_understandClass <- mean(els$understandClass, na.rm = TRUE)
+median_understandClass <- median(els$understandClass, na.rm = TRUE)
+
+# Create the bar graph for understandClass
+ggplot(els, aes(x = as.factor(understandClass))) + 
+  geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+  labs(title = "Bar Graph of Understanding Class Material Scores", 
+       x = "Understanding Class Material Scores", 
+       y = "Count") +
+  geom_text(aes(label = ..count..), stat = 'count', position = position_stack(vjust = 0.5), color = "white") +
+  annotate("text", x = Inf, y = Inf, label = paste("Mean:", round(mean_understandClass, 2)), hjust = 1.1, vjust = 2, size = 4, color = "black") +
+  annotate("text", x = Inf, y = Inf, label = paste("Median:", median_understandClass), hjust = 1.1, vjust = 1, size = 4, color = "black")
+
+
+# excellent assignment
+# Calculate mean and median for excellentAssign
+mean_excellentAssign <- mean(els$excellentAssign, na.rm = TRUE)
+median_excellentAssign <- median(els$excellentAssign, na.rm = TRUE)
+
+# Create the bar graph for excellentAssign
+ggplot(els, aes(x = as.factor(excellentAssign))) + 
+  geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+  labs(title = "Bar Graph of Excellent Assignment Scores", 
+       x = "Excellent Assignment Scores", 
+       y = "Count") +
+  geom_text(aes(label = ..count..), stat = 'count', position = position_stack(vjust = 0.5), color = "white") +
+  annotate("text", x = Inf, y = Inf, label = paste("Mean:", round(mean_excellentAssign, 2)), hjust = 1.1, vjust = 2, size = 4, color = "black") +
+  annotate("text", x = Inf, y = Inf, label = paste("Median:", median_excellentAssign), hjust = 1.1, vjust = 1, size = 4, color = "black")
+
+
+# master skills
+# Calculate mean and median for masterSkills
+mean_masterSkills <- mean(els$masterSkills, na.rm = TRUE)
+median_masterSkills <- median(els$masterSkills, na.rm = TRUE)
+
+# Create the bar graph for masterSkills
+ggplot(els, aes(x = as.factor(masterSkills))) + 
+  geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+  labs(title = "Bar Graph of Mastering Skills Scores", 
+       x = "Mastering Skills Scores", 
+       y = "Count") +
+  geom_text(aes(label = ..count..), stat = 'count', position = position_stack(vjust = 0.5), color = "white") +
+  annotate("text", x = Inf, y = Inf, label = paste("Mean:", round(mean_masterSkills, 2)), hjust = 1.1, vjust = 2, size = 4, color = "black") +
+  annotate("text", x = Inf, y = Inf, label = paste("Median:", median_masterSkills), hjust = 1.1, vjust = 1, size = 4, color = "black")
+
+
+# stacked bar graph
+els_long <- els %>%
+  pivot_longer(
+    cols = c(excellentTests, understandTexts, understandClass, excellentAssign, masterSkills),
+    names_to = "ScoreType",
+    values_to = "Scores"
+  )
+els_long_filtered <- els_long %>%
+  filter(!is.na(Scores)) # Removes rows where Scores is NA
+
+library(ggplot2)
+
+ggplot(els_long_filtered, aes(x = ScoreType, fill = as.factor(Scores))) + 
+  geom_bar(position = "stack") + 
+  geom_text(stat = 'count', aes(label = ..count..), position = position_stack(vjust = 0.5), size = 3) +
+  labs(title = "Frequency of Scores by Score Type", 
+       x = "Score Type", 
+       y = "Frequency") +
+    scale_fill_brewer(palette = "Set4") +
+    theme_minimal()
+
+# grouped bar graph
+# Calculate the dodge width for correct text alignment
+dodge_width <- position_dodge(width = 0.9)$width
+
+ggplot(els_long_filtered, aes(x = ScoreType, fill = as.factor(Scores))) + 
+  geom_bar(position = "dodge", stat = "count") +
+  geom_text(aes(label = ..count..), stat = "count", vjust = -0.25, 
+            position = position_dodge(width = dodge_width), size = 3) +
+  labs(title = "Grouped Bar Graph of Scores by Score Type", 
+       x = "Score Type", 
+       y = "Count",
+       fill = "Score Value") +
+  scale_fill_brewer(palette = "Set4") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# grouped bar plot for ethnicity
+els_long <- els %>%
+  pivot_longer(cols = c("Asian", "Black", "Hispanic", "Other"),
+               names_to = "Ethnicity",
+               values_to = "Count") %>%
+  group_by(Ethnicity) %>%
+  summarize(Frequency = sum(Count))
+
+# Assuming the data is now properly aggregated, move to plotting
+ggplot(els_long, aes(x = Ethnicity, y = Frequency, fill = Ethnicity)) + 
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = Frequency), vjust = -0.3, position = position_dodge(width = 0.9), size = 4) +
+  labs(title = "Frequency by Ethnicity", 
+       x = "Ethnicity", 
+       y = "Frequency") +
+  scale_fill_brewer(palette = "Pastel1") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r pie chart}
+library(dplyr)
+library(ggplot2)
+library(tidyr) # Ensure tidyr is loaded for pivot_longer
+
+# Calculate the total counts for each category
+category_counts <- els %>%
+  summarise(Asian = sum(Asian, na.rm = TRUE),
+            Black = sum(Black, na.rm = TRUE),
+            Hispanic = sum(Hispanic, na.rm = TRUE),
+            Other = sum(Other, na.rm = TRUE)) %>%
+  pivot_longer(cols = everything(), names_to = "Category", values_to = "Counts")
+
+# Calculate percentages
+total_counts <- sum(category_counts$Counts)
+category_counts <- category_counts %>%
+  mutate(Percentage = Counts / total_counts * 100)
+
+ggplot(category_counts, aes(x = "", y = Counts, fill = Category)) +
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  coord_polar("y", start = 0) +
+  geom_text(aes(label = paste(Category, ": ", Counts, " (", sprintf("%.1f%%", Percentage), ")", sep = "")),
+            position = position_stack(vjust = 0.5)) +
+  labs(title = "Distribution of Ethnicity", x = NULL, y = NULL, fill = "Category") +
+  scale_fill_brewer(palette = "Pastel1") +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+```{r gender}
+summary(els$Male)
+library(ggplot2)
+
+# Bar Graph
+ggplot(els, aes(x = as.factor(Male))) + 
+  geom_bar(fill = "lightskyblue2", color = "lightskyblue2") +
+  geom_text(stat = 'count', aes(label = ..count.., y = ..count..), vjust = -0.5, color = "black") +
+  labs(title = "Distribution of Gender", 
+       x = "Gender", 
+       y = "Count") +
+  scale_x_discrete(labels = c("0" = "Female", "1" = "Male")) # Adjust labels as per your data coding
+
+# Pie Chart
+ggplot(els, aes(x = "", fill = factor(Male))) + 
+  geom_bar(width = 1) +
+  coord_polar(theta = "y") +
+  geom_text(aes(label = paste(round((..count..)/sum(..count..)*100, 3), "%")), 
+            stat = 'count', position = position_stack(vjust = 0.5)) +
+  scale_fill_manual(values = c("0" = "lightskyblue2", "1" = "mintcream"))
+  labs(title = "Gender Distribution", x = NULL, y = NULL, fill = "Gender") +
+  scale_fill_discrete(labels = c("0" = "Female", "1" = "Male")) 
+
+
+```
