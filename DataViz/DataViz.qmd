@@ -378,5 +378,4 @@ combined_plot <- plot_asian + plot_black + plot_hispanic + plot_other +
 combined_plot
 
 ggsave("combined_ethnic_groups_plot.png", combined_plot, width = 20, height = 10) 
-
 ```

@@ -300,8 +300,225 @@ ggplot(els, aes(x = "", fill = factor(Male))) +
 
 ```
 
-
-
-
 # HSLS
+```{r}
+data <- read_spss("/Users/nelliechen/Desktop/IDA/Data-Visualization/HSLS\ 2009\ 6.11.21.sav")
+library(readr)
 
+hsls <- data[, c("S2MTESTS", "S2MTEXTBOOK", "S2MSKILLS", "S2MASSEXCL", "X1SEX", "X1RACE", "X1HISPANIC", "X1WHITE", "X1BLACK", "X1ASIAN", "X1PACISLE", "X1SES")]
+hsls_labs <- c("masterSkills", "excellentTests", "understandTexts", "excellentAssign", "Sex", "race", "Hispanic", "White", "Black", "Asian", "PacificIsland", "SES")
+colnames(hsls) <- hsls_labs
+hsls$Sex <- factor(hsls$Sex, levels = c(1, 2), labels = c("Male", "Female"))
+```
+
+## Row {height=40%}
+### Column {.tabset width="70%"}
+```{r}
+hsls <- data[, c("S2MTESTS", "S2MTEXTBOOK", "S2MSKILLS", "S2MASSEXCL", "X1SEX", "X1RACE", "X1HISPANIC", "X1WHITE", "X1BLACK", "X1ASIAN", "X1PACISLE", "X1SES")]
+hsls_labs <- c("masterSkills", "excellentTests", "understandTexts", "excellentAssign", "Sex", "race", "Hispanic", "White", "Black", "Asian", "PacificIsland", "SES")
+colnames(hsls) <- hsls_labs
+
+# 1. Draw bar graphs for specified columns
+library(haven)
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+# Load the dataset
+data <- read_spss("/Users/nelliechen/Desktop/IDA/Data-Visualization/HSLS 2009 6.11.21.sav")
+
+# Select relevant columns and rename them
+hsls <- data[, c("S2MTESTS", "S2MTEXTBOOK", "S2MSKILLS", "S2MASSEXCL", "X1SEX", "X1RACE", "X1HISPANIC", "X1WHITE", "X1BLACK", "X1ASIAN", "X1PACISLE", "X1SES")]
+hsls_labs <- c("masterSkills", "excellentTests", "understandTexts", "excellentAssign", "Sex", "race", "Hispanic", "White", "Black", "Asian", "PacificIsland", "SES")
+colnames(hsls) <- hsls_labs
+
+# 1. Draw bar graphs for specified columns
+# Function to generate bar graphs with mean and median annotations
+bar_graphs_with_mean_median <- function(data, column) {
+  mean_value <- mean(data[[column]], na.rm = TRUE)
+  median_value <- median(data[[column]], na.rm = TRUE)
+  
+  ggplot(data, aes(x = as.factor(get(column)))) + 
+    geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+    labs(title = paste("Bar Graph of", column, "Scores"), 
+         x = column, 
+         y = "Count") +
+    geom_text(aes(label = ..count..), stat = 'count', position = position_stack(vjust = 0.5), color = "white") +
+    annotate("text", x = Inf, y = Inf, label = paste("Mean:", sprintf("%.2f", mean_value), "\nMedian:", median_value), hjust = 1.1, vjust = 1, size = 5, color = "black") +
+    theme_minimal()
+}
+```
+
+```{r}
+#| title: Master Skilss
+plot_masterSkills <- bar_graphs_with_mean_median(hsls, "masterSkills")
+plot_masterSkills
+```
+
+```{r}
+#| title: Excellent Tests
+plot_excellentTests <- bar_graphs_with_mean_median(hsls, "excellentTests")
+plot_excellentTests
+```
+
+```{r}
+#| title: Understand Texts
+plot_understandTexts <- bar_graphs_with_mean_median(hsls, "understandTexts")
+plot_understandTexts
+```
+
+```{r}
+#| title: Excellent Assignment
+plot_excellentAssign <- bar_graphs_with_mean_median(hsls, "excellentAssign")
+plot_excellentAssign
+```
+
+```{r}
+#| title: Stacked Bar Graph
+hsls_long <- hsls %>%
+  pivot_longer(cols = c("masterSkills", "excellentTests", "understandTexts", "excellentAssign"),
+               names_to = "ScoreType", values_to = "Scores")
+
+ggplot(hsls_long, aes(x = ScoreType, fill = as.factor(Scores))) + 
+  geom_bar(position = "stack") + 
+  labs(title = "Stacked Frequency of Scores by Score Type", 
+       x = "Score Type", 
+       y = "Frequency") +
+  scale_fill_brewer(palette = "Set4") +
+  theme_minimal()
+```
+
+### Column
+```{r}
+#| title: ethnicity distribution
+ethnicity_counts <- hsls %>%
+  summarise(Hispanic = sum(Hispanic, na.rm = TRUE),
+            White = sum(White, na.rm = TRUE),
+            Black = sum(Black, na.rm = TRUE),
+            Asian = sum(Asian, na.rm = TRUE),
+            PacificIsland = sum(PacificIsland, na.rm = TRUE)) %>%
+  pivot_longer(cols = everything(), names_to = "Ethnicity", values_to = "Counts")
+
+# Calculate percentages for each ethnicity
+ethnicity_counts <- ethnicity_counts %>%
+  mutate(Percentage = Counts / sum(Counts) * 100)
+
+ggplot(ethnicity_counts, aes(x = "", y = Percentage, fill = Ethnicity)) +
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  coord_polar("y", start = 0) +
+  geom_text(aes(label = paste(Ethnicity, sprintf("%.1f%%", Percentage))), position = position_stack(vjust = 0.5)) +
+  labs(title = "Ethnicity Distribution", x = NULL, y = NULL) +
+  scale_fill_brewer(palette = "Pastel1") +
+  theme_void()
+```
+
+
+## Row
+### Column{.tabset width="70%"}
+```{r}
+#| title: Ratings Grouped by Gender
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Assuming hsls has been loaded and prepared with necessary columns
+# Reshape the hsls data to long format and remove rows with NA in Score
+# Reshape the hsls data to long format and filter out rows where Sex is NA
+hsls_long <- hsls %>%
+  pivot_longer(cols = c("masterSkills", "excellentTests", "understandTexts", "excellentAssign"),
+               names_to = "Test", values_to = "Score") %>%
+  mutate(Sex = factor(Sex, labels = c("Female", "Male"))) %>%
+  filter(!is.na(Sex)) # This line removes rows where Sex is NA
+
+# Plot the frequencies of scores by test and gender, excluding NAs for gender
+ggplot(hsls_long, aes(x = Test, fill = factor(Score), group = interaction(Test, Score, Sex))) + 
+  geom_bar(position = position_dodge(width = 0.9), stat = "count", aes(y = ..count..)) +
+  geom_text(stat = 'count', aes(label = ..count.., y = ..count.., group = interaction(Test, Score, Sex)),
+            position = position_dodge(width = 0.9), vjust = -0.25, size=2.5) +
+  facet_wrap(~Sex, scales = "free_x") +
+  labs(title = "Frequency of Scores by Test and Gender",
+       x = "Test", y = "Frequency", fill = "Score") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Blues")
+
+```
+
+```{r}
+#| title: Ratings Grouped by Ethnicity
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(forcats)
+library(patchwork)
+
+# Assuming 'hsls' is already loaded and contains relevant columns
+
+# Reshape the hsls data
+hsls_long <- hsls %>%
+  pivot_longer(cols = c("masterSkills", "excellentTests", "understandTexts", "excellentAssign"),
+               names_to = "Test", values_to = "Score") %>%
+  mutate(Ethnicity = case_when(
+    Hispanic > 0 ~ "Hispanic",
+    White > 0 ~ "White",
+    Black > 0 ~ "Black",
+    Asian > 0 ~ "Asian",
+    PacificIsland > 0 ~ "Pacific Islander",
+    TRUE ~ "Other"
+  )) %>%
+  filter(!is.na(Ethnicity)) # Ensure we have specified ethnicity
+
+# Function to plot for a given ethnic group
+plot_for_ethnic_group <- function(data, group) {
+  filtered_data <- data %>% filter(Ethnicity == group)
+  ggplot(filtered_data, aes(x = Test, fill = factor(Score), group = interaction(Test, Score))) + 
+    geom_bar(position = position_dodge(width = 0.5), stat = "count", aes(y = ..count..)) +
+    geom_text(stat = 'count', aes(label = ..count.., y = ..count.., group = interaction(Test, Score)),
+              position = position_dodge(width = 0.5), vjust = -0.25, size = 3) +
+    labs(title = paste("Frequency of Scores by Test among", group, "Students"),
+         x = "Test", y = "Frequency", fill = "Score") +
+    theme_minimal() +
+    theme(plot.title = element_text(size = 4), 
+          axis.title.x = element_text(size = 6),
+          axis.title.y = element_text(size = 6),
+          legend.text = element_text(size = 6),
+          legend.title = element_text(size = 6),
+          legend.key.size = unit(0.3, "cm"),
+          axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_fill_brewer(palette = "Blues")
+}
+
+# Generate plots for each ethnic group
+ethnic_groups <- c("Hispanic", "White", "Black", "Asian", "Pacific Islander", "Other")
+plots <- lapply(ethnic_groups, function(group) plot_for_ethnic_group(hsls_long, group))
+
+# Combine the plots into a single layout
+combined_plot <- wrap_plots(plots, ncol = 3, nrow=2) # Adjust as needed based on the number of plots
+
+# Print the combined plot
+print(combined_plot)
+
+# Save the combined plot to a file
+ggsave("combined_ethnic_groups_plot.pdf", combined_plot, width = 20, height = 10)
+
+```
+
+
+
+### Column
+```{r}
+#| title: Gender Distribution
+hsls$Sex <- factor(hsls$Sex, labels = c("Male", "Female"))
+
+ggplot(hsls, aes(x = "", fill = Sex)) + 
+  geom_bar(width = 1, stat = "count") +
+  coord_polar("y", start = 0) +
+  geom_text(aes(label = paste(round((..count..)/sum(..count..)*100, 1), "%")), 
+            stat = 'count', position = position_stack(vjust = 0.5)) +
+  labs(title = "Gender Distribution", x = NULL, y = NULL) +
+  theme_void() +
+  scale_fill_brewer(palette = "Blues")
+
+```

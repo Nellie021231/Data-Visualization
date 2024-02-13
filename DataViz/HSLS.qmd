@@ -1,0 +1,15 @@
+---
+title: "HSLS data visualization"
+---
+
+```{r}
+library(haven)
+data <- read_spss("/Users/nelliechen/Desktop/IDA/Data-Visualization/HSLS\ 2009\ 6.11.21.sav")
+library(readr)
+
+hsls <- data[, c("S2MTESTS", "S2MTEXTBOOK", "S2MSKILLS", "S2MASSEXCL", "X1SEX", "X1RACE", "X1HISPANIC", "X1WHITE", "X1BLACK", "X1ASIAN", "X1PACISLE", "X1SES")]
+hsls_labs <- c("masterSkills", "excellentTests", "understandTexts", "excellentAssign", "Sex", "race", "Hispanic", "White", "Black", "Asian", "PacificIsland", "SES")
+colnames(hsls) <- hsls_labs
+
+```
+
