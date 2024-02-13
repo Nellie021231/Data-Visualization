@@ -294,5 +294,89 @@ ggplot(els, aes(x = "", fill = factor(Male))) +
   labs(title = "Gender Distribution", x = NULL, y = NULL, fill = "Gender") +
   scale_fill_discrete(labels = c("0" = "Female", "1" = "Male")) 
 
+```
+
+```{r bar graphs - GROUPED}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+els_long <- els %>%
+  pivot_longer(cols = c("excellentTests", "understandTexts", "understandClass", "excellentAssign", "masterSkills"),
+               names_to = "Test", values_to = "Score") %>%
+  mutate(Male = factor(Male, labels = c("Female", "Male")))
+ggplot(els_long, aes(x = Test, fill = factor(Score), group = interaction(Test, Score, Male))) + 
+  geom_bar(position = position_dodge(width = 0.9), stat = "count", aes(y = ..count..)) +
+  geom_text(stat = 'count', aes(label = ..count.., y = ..count.., group = interaction(Test, Score, Male)),
+            position = position_dodge(width = 0.9), vjust = -0.25,size=2.5) +
+  facet_wrap(~Male, scales = "free_x") +
+  labs(title = "Frequency of Scores by Test and Gender",
+       x = "Test", y = "Frequency", fill = "Score") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Blues")
+
+# grouped by ethnicity
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(forcats)
+library(patchwork)
+
+# Assuming 'els' is your original dataset
+# First, reshape the data
+els_long <- els %>%
+  pivot_longer(cols = c("excellentTests", "understandTexts", "understandClass", "excellentAssign", "masterSkills"),
+               names_to = "Test", values_to = "Score")
+
+# Add an Ethnicity column based on the binary flags
+els_long <- els_long %>%
+  mutate(Ethnicity = case_when(
+    Asian == 1 ~ "Asian",
+    Black == 1 ~ "Black",
+    Hispanic == 1 ~ "Hispanic",
+    Other == 1 ~ "Other",
+    TRUE ~ NA_character_ # Use NA for rows that do not match any condition
+  )) %>%
+  filter(!is.na(Ethnicity)) # Remove rows without a specified ethnicity
+
+# Function to plot for a given ethnic group
+plot_for_ethnic_group <- function(data, group) {
+  filtered_data <- data %>% filter(Ethnicity == group)
+  ggplot(filtered_data, aes(x = Test, fill = factor(Score), group = interaction(Test, Score))) + 
+    geom_bar(position = position_dodge(width = 0.5), stat = "count", aes(y = ..count..)) +
+    geom_text(stat = 'count', aes(label = ..count.., y = ..count.., group = interaction(Test, Score)),
+              position = position_dodge(width = 0.5), vjust = -0.25, size = 1.5) +
+    labs(title = paste("Frequency of Scores by Test among", group, "Students"),
+         x = "Test", y = "Frequency", fill = "Score") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_fill_brewer(palette = "Blues")
+}
+
+# Plot for each ethnic group
+ethnic_groups <- c("Asian", "Black", "Hispanic", "Other")
+plots <- lapply(ethnic_groups, function(group) plot_for_ethnic_group(els_long, group))
+
+
+plot_asian <- plots[[1]]+
+  theme(plot.title = element_text(size = 8), axis.title.x = element_text(size = 8), 
+    axis.title.y = element_text(size = 8),legend.text = element_text(size = 8),legend.title = element_text(size = 8),legend.key.size = unit(0.3, "cm"))
+plot_black <- plots[[2]]+
+  theme(plot.title = element_text(size = 8), axis.title.x = element_text(size = 8), 
+    axis.title.y = element_text(size = 8) ,legend.text = element_text(size = 8),legend.title = element_text(size = 8),legend.key.size = unit(0.3, "cm") )
+plot_hispanic <- plots[[3]]+
+  theme(plot.title = element_text(size = 8), axis.title.x = element_text(size = 8), 
+    axis.title.y = element_text(size = 8),legend.text = element_text(size = 8),legend.title = element_text(size = 8),legend.key.size = unit(0.3, "cm")  )
+plot_other <- plots[[4]]+
+  theme(plot.title = element_text(size =8), axis.title.x = element_text(size = 8), 
+    axis.title.y = element_text(size = 8),legend.text = element_text(size = 8) ,legend.title = element_text(size = 8),legend.key.size = unit(0.3, "cm") )
+
+# Combine the plots
+combined_plot <- plot_asian + plot_black + plot_hispanic + plot_other + 
+  plot_layout(ncol = 2) # Arrange in 2 columns (adjust as needed)
+
+combined_plot
+
+ggsave("combined_ethnic_groups_plot.png", combined_plot, width = 20, height = 10) 
 
 ```
